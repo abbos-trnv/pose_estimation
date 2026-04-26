@@ -1,0 +1,38 @@
+# Data
+data/
+trash/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Weights and logs
+weights/
+logs/
+*.pth
+*.pt
+*.ckpt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# DVC cache
+.dvc/cache/

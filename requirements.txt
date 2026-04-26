@@ -1,0 +1,12 @@
+# Dependencies
+torch
+ultralytics
+numpy
+pandas
+opencv-python
+albumentations
+pyyaml
+hydra-core
+dvc
+mlflow
+tensorboard
