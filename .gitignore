@@ -4,6 +4,7 @@ trash/
 
 # Virtual environment
 .venv/
+.venv_mmpose/
 venv/
 env/
 
@@ -13,6 +14,7 @@ __pycache__/
 *$py.class
 *.so
 .pytest_cache/
+src/__pycache__/
 
 # IDE
 .vscode/
@@ -29,10 +31,12 @@ logs/
 *.pth
 *.pt
 *.ckpt
+yolov8*.pt
 
 # OS
 .DS_Store
 Thumbs.db
 
 # DVC cache
-.dvc/cache/
+.dvc/cache/yolo_pose.zip
+src/data/__pycache__/
