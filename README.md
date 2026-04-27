@@ -98,6 +98,3 @@ min_bbox_height = 50     # минимальная высота
 - [ViTPose](https://huggingface.co/usyd-community/vitpose-base-simple)
 - [YOLOv8](https://docs.ultralytics.com/)
 
----
-
-*Проект для MMLS курса*
