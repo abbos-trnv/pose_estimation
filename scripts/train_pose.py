@@ -40,6 +40,21 @@ def main(cfg: DictConfig) -> None:
     model = YOLO(str(cfg.model.weights))
     device = _device(str(cfg.train.device))
     amp = bool(cfg.train.amp)
+    tcfg = OmegaConf.to_container(cfg.train, resolve=True)
+    assert isinstance(tcfg, dict)
+    reserved = {
+        "epochs",
+        "imgsz",
+        "batch",
+        "workers",
+        "device",
+        "amp",
+        "patience",
+        "project",
+        "name",
+    }
+    extra = {k: v for k, v in tcfg.items() if k not in reserved and v is not None}
+
     results = model.train(
         data=str(yaml_path),
         epochs=int(cfg.train.epochs),
@@ -54,6 +69,7 @@ def main(cfg: DictConfig) -> None:
         exist_ok=True,
         pretrained=True,
         seed=int(cfg.seed),
+        **extra,
     )
     save_dir = Path(results.save_dir)
     best = save_dir / "weights" / "best.pt"

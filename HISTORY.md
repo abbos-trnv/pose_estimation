@@ -25,9 +25,7 @@
 - Модули `src/pose_av/{data_waymo,evaluate,yolo_backend,runlog,seed,boxes}.py`
 - Тесты без датасета: `pytest -q`
 
-## 2026-09-23 — GP4 train infra (scores pending Kaggle)
+## 2026-09-23 — GP4 train recipe
 
-- Export Waymo → YOLO-pose: `scripts/export_yolo_pose.py` (весь сегмент, val = последние 20% кадров)
-- Fine-tune: `scripts/train_pose.py` (AMP, workers, Hydra `-m`)
-- Eval срезы small/medium/large по площади бокса
-- Ноутбук: `notebooks/gp4_train.ipynb`
+- Не смоук 20 эпох @ 640: в отчёт не идёт.
+- Боевой прогон: 100 эпох, imgsz 1280, AdamW, copy-paste, eval `data.subset=val`, веса `gp4_s1280`.

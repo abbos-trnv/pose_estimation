@@ -1,7 +1,7 @@
-# GP4 train. First export, then train.
-# python scripts/export_yolo_pose.py data.max_frames=null
+# python scripts/export_yolo_pose.py
 # python scripts/train_pose.py
-# python scripts/train_pose.py -m model=yolov8n_pose,yolov8s_pose train.imgsz=640,1280
+# eval val only:
+# python scripts/eval_pose.py data=waymo_full data.subset=val model.weights=runs/train/gp4_s1280/weights/best.pt
 defaults:
   - data: waymo_full
   - model: yolov8s_pose
@@ -12,18 +12,33 @@ export_dir: data/yolo_pose_waymo
 val_frac: 0.2
 
 train:
-  epochs: 20
-  imgsz: 640
-  batch: 8
-  workers: 4          # параллельная загрузка
-  amp: true           # mixed precision
-  device: auto        # Kaggle 2xT4: [0,1]
-  patience: 5
+  epochs: 100
+  imgsz: 1280
+  batch: 4              # T4 16GB; if OOM: train.batch=2
+  workers: 2
+  amp: true
+  device: auto
+  patience: 30
   project: runs/train
-  name: gp4
+  name: gp4_s1280
+  cos_lr: true
+  close_mosaic: 20
+  optimizer: AdamW
+  lr0: 0.002
+  lrf: 0.01
+  warmup_epochs: 3.0
+  mosaic: 1.0
+  mixup: 0.0
+  copy_paste: 0.3
+  scale: 0.75
+  degrees: 5.0
+  fliplr: 0.5
+  pose: 12.0
+  kobj: 2.0
+  plots: true
 
 logging:
-  run_name: gp4-train
+  run_name: gp4-s1280
   wandb:
     enabled: true
     project: pose-av

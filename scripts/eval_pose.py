@@ -45,11 +45,15 @@ def main(cfg: DictConfig) -> None:
     if not root.is_absolute():
         root = (ROOT / root).resolve()
 
+    mf = cfg.data.max_frames
+    max_frames = None if mf in (None, "null", "None") else int(mf)
     slice_data = load_slice(
         root,
         segment=str(cfg.data.segment),
         split=str(cfg.data.split),
-        max_frames=cfg.data.max_frames,
+        max_frames=max_frames,
+        subset=str(cfg.data.get("subset", "all")),
+        val_frac=float(cfg.data.get("val_frac", 0.2)),
     )
     backend = YoloPoseBackend(
         weights=str(cfg.model.weights),

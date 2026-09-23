@@ -3,7 +3,7 @@
 **Отчёт по вехе 4 (ГП4): экспериментирование**
 
 Тургунов Аббос  
-Статус: **инфраструктура и сетка готовы; цифры fine-tune — после прогона на Kaggle.**  
+НИУ ВШЭ, 23 сентября 2026 г.  
 Репозиторий: `pose_estimation/` ветка `missing-ml-2026`
 
 ---
@@ -41,8 +41,8 @@ Hydra:
 
 ```text
 python scripts/export_yolo_pose.py
-python scripts/train_pose.py -m model=yolov8n_pose,yolov8s_pose train.imgsz=640
-python scripts/eval_pose.py model.weights=runs/train/gp4/weights/best.pt data.max_frames=null
+python scripts/train_pose.py
+python scripts/eval_pose.py data=waymo_full data.subset=val model.weights=runs/train/gp4_s1280/weights/best.pt
 ```
 
 На Kaggle 2×T4: `train.device=[0,1]` (DDP в Ultralytics).
@@ -62,27 +62,22 @@ Gradient checkpointing не нужен (модель влезает в 16 GB).
 
 ---
 
-## 5. Метрики до обучения (якорь)
+## 5. Скор
 
-Срез 40 кадров, `yolov8s-pose.pt` COCO, W&B run `0yfnuwgz`:
+Рабочий прогон — **100 эпох, imgsz=1280**, eval **только val**. Короткий 20 эпох @ 640 в отчёт не идёт.
 
-| | matched | unmatched | OKS | PCK@0.2 |
-|---|---|---|---|---|
-| full_frame | 53 | 100 | 0.956 | 0.464 |
-| gt_crop | 150 | 3 | 0.905 | 0.435 |
+Якорь ГП2 (COCO, 40 кадров): crop PCK@0.2 = 0.435, full-frame unmatched = 100.
 
-Цель E1: **PCK@0.2 выше 0.45 на gt_crop** и меньше unmatched на full_frame, когда eval на val-хвосте сегмента (не на тех же 40 train-кадрах).
-
-Таблица E1–E4 заполняется после Kaggle.
+Цель: crop PCK заметно выше 0.45 на val; small-бокс PCK не 0.28; full-frame unmatched ниже доли COCO на том же val.
 
 ---
 
-## 6. Команды
+## 6. Команды (Kaggle, несколько часов)
 
-```powershell
-$env:PYTHONPATH="src"; $env:WAYMO_ROOT="data/waymo_v2"
-pip install ultralytics torch wandb
+```text
 python scripts/export_yolo_pose.py
-python scripts/train_pose.py train.epochs=20
-python scripts/eval_pose.py model.weights=runs/train/gp4/weights/best.pt data.max_frames=null
+python scripts/train_pose.py
+python scripts/eval_pose.py data=waymo_full data.subset=val model.weights=runs/train/gp4_s1280/weights/best.pt
 ```
+
+OOM: `train.batch=2`. Не выключать ноутбук, пока идёт train.

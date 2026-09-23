@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 from pose_av.boxes import iou_xyxy, match_greedy
-from pose_av.data_waymo import SliceTables, gt_keypoints
+from pose_av.data_waymo import SliceTables, apply_frame_subset, gt_keypoints
 from pose_av.evaluate import run_protocols, slice_by_area
 from pose_av.keypoints import CAMERA_ORDER
 
@@ -70,3 +70,9 @@ def test_slice_by_area_tertiles():
     sl = slice_by_area(oks, pck, areas)
     assert set(sl) == {"small", "medium", "large"}
     assert sl["large"]["n"] == 1
+
+
+def test_apply_frame_subset_val_is_tail():
+    keys = list(range(10))
+    assert apply_frame_subset(keys, "val", 0.2) == [8, 9]
+    assert apply_frame_subset(keys, "train", 0.2) == list(range(8))

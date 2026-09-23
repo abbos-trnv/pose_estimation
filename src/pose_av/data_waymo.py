@@ -52,7 +52,14 @@ def resolve_waymo_root(configured: str | Path) -> Path:
     return root
 
 
-def load_slice(root: Path, segment: str, split: str = "training", max_frames: int | None = 40) -> SliceTables:
+def load_slice(
+    root: Path,
+    segment: str,
+    split: str = "training",
+    max_frames: int | None = 40,
+    subset: str = "all",
+    val_frac: float = 0.2,
+) -> SliceTables:
     img_path = find_parquet(root, "camera_image", segment)
     box_path = find_parquet(root, "camera_box", segment)
     hkp_path = find_parquet(root, "camera_hkp", segment)
@@ -129,14 +136,36 @@ def load_slice(root: Path, segment: str, split: str = "training", max_frames: in
     keys.sort()
     if max_frames is not None:
         keys = keys[: int(max_frames)]
+    keys = apply_frame_subset(keys, subset=subset, val_frac=val_frac)
 
     return SliceTables(
         images=images,
         boxes=dict(boxes),
         hkps=dict(hkps),
         keys=keys,
-        paths={"image": str(img_path), "box": str(box_path), "hkp": str(hkp_path), "split": split},
+        paths={
+            "image": str(img_path),
+            "box": str(box_path),
+            "hkp": str(hkp_path),
+            "split": split,
+            "subset": subset,
+        },
     )
+
+
+def apply_frame_subset(keys: list, subset: str = "all", val_frac: float = 0.2) -> list:
+    """Time-sorted holdout, same rule as YOLO export (last val_frac = val)."""
+    if subset in (None, "all"):
+        return keys
+    if not keys:
+        return keys
+    n_val = max(1, int(round(len(keys) * val_frac)))
+    n_val = min(n_val, len(keys) - 1) if len(keys) > 1 else 0
+    if subset == "val":
+        return keys[-n_val:] if n_val else keys
+    if subset == "train":
+        return keys[:-n_val] if n_val else keys
+    raise ValueError(f"unknown subset {subset}")
 
 
 def gt_keypoints(rec: dict) -> tuple[np.ndarray, np.ndarray]:
