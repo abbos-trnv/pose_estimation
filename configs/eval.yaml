@@ -1,0 +1,29 @@
+# GP3 eval entry. Override anything from CLI:
+# python scripts/eval_pose.py model.weights=yolov8n-pose.pt data.max_frames=5 protocol=gt_crop
+defaults:
+  - _self_
+  - data: waymo_slice
+  - model: yolov8s_pose
+
+seed: 42
+device: auto          # auto | cuda | cpu
+protocol: both        # both | full_frame | gt_crop
+iou_match: 0.3
+progress_every: 10
+
+logging:
+  run_name: null
+  wandb:
+    enabled: true          # needs WANDB_API_KEY; skip otherwise
+    project: pose-av
+    entity: null           # your wandb username/team, optional
+  mlflow:
+    enabled: false
+    tracking_uri: null
+    experiment: pose-av
+
+hydra:
+  run:
+    dir: runs/${now:%Y%m%d_%H%M%S}
+  job:
+    chdir: false

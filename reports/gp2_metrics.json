@@ -1,0 +1,24 @@
+{
+  "model": "yolov8s-pose.pt",
+  "device": "cuda",
+  "imgsz": 1280,
+  "conf": 0.35,
+  "segment": "10023947602400723454_1120_000_1140_000",
+  "frames": 40,
+  "full_frame_bottom_up": {
+    "protocol": "full_frame",
+    "matched_instances": 53,
+    "unmatched_gt": 100,
+    "mean_OKS": 0.9559478849559337,
+    "PCK@0.2": 0.46365783063896265,
+    "latency_ms_mean": 33.843599724997375,
+    "fps": 29.547684292619305
+  },
+  "gt_crop_top_down": {
+    "protocol": "gt_crop",
+    "matched_instances": 150,
+    "unmatched_gt": 3,
+    "mean_OKS": 0.905392154160058,
+    "PCK@0.2": 0.4348325378325378
+  }
+}

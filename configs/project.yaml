@@ -1,0 +1,10 @@
+data:
+  # Perception v2 modular layout after `gcloud storage cp`
+  waymo_root: data/waymo_v2
+  primary_eval: waymo_camera_hkp
+  extra_domain: nuscenes_pseudo_gt
+project:
+  name: pose-av
+  owner: Тургунов Аббос
+  track: 2d_crop_pose
+  must_have_milestones: [gp1, gp2, gp3, gp4]

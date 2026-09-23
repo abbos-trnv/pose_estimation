@@ -1,0 +1,9 @@
+name: yolov8n-pose
+weights: yolov8n-pose.pt
+imgsz: 640
+conf: 0.25
+crop_imgsz: 256
+crop_conf: 0.1
+kpt_conf: 0.2
+crop_kpt_conf: 0.15
+crop_pad: 0.2
