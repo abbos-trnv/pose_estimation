@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pose_av.metrics import coco17_to_waymo14, mean_oks, pck
+from pose_av.metrics import coco17_to_waymo14, mean_oks, pck, waymo14_to_coco17
 
 
 def _perfect_batch(n: int = 4, k: int = 14):
@@ -43,3 +43,20 @@ def test_coco17_mapping_nose_and_shoulders():
     np.testing.assert_array_equal(waymo[0, 1], [3, 4])
     np.testing.assert_array_equal(waymo[0, 13], [15, 0])
     assert vis[0, 13] == 1
+
+
+def test_waymo14_to_coco17_body_and_ears():
+    waymo = np.zeros((14, 2))
+    vis = np.zeros(14)
+    waymo[0] = [1, 2]
+    vis[0] = 1
+    waymo[1] = [3, 4]
+    vis[1] = 1
+    waymo[13] = [9, 1]
+    vis[13] = 1
+    coco_xy, coco_vis = waymo14_to_coco17(waymo, vis)
+    np.testing.assert_array_equal(coco_xy[0], [1, 2])
+    np.testing.assert_array_equal(coco_xy[5], [3, 4])
+    np.testing.assert_array_equal(coco_xy[3], [9, 1])
+    assert coco_vis[1] == 0
+    assert coco_vis[3] == 1

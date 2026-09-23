@@ -12,3 +12,9 @@ lint:
 
 eval:
 	python scripts/eval_pose.py
+
+export:
+	python scripts/export_yolo_pose.py
+
+train:
+	python scripts/train_pose.py

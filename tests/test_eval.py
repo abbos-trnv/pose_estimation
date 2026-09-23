@@ -5,7 +5,7 @@ import numpy as np
 
 from pose_av.boxes import iou_xyxy, match_greedy
 from pose_av.data_waymo import SliceTables, gt_keypoints
-from pose_av.evaluate import run_protocols
+from pose_av.evaluate import run_protocols, slice_by_area
 from pose_av.keypoints import CAMERA_ORDER
 
 
@@ -61,3 +61,12 @@ def test_gt_keypoints_order():
     assert vis[0] == 1
     np.testing.assert_array_equal(xy[0], [3.0, 4.0])
     np.testing.assert_array_equal(xy[1], [8.0, 9.0])
+
+
+def test_slice_by_area_tertiles():
+    oks = [0.1, 0.2, 0.9]
+    pck = [0.1, 0.2, 0.8]
+    areas = [10.0, 50.0, 200.0]
+    sl = slice_by_area(oks, pck, areas)
+    assert set(sl) == {"small", "medium", "large"}
+    assert sl["large"]["n"] == 1

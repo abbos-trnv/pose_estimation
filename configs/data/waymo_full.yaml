@@ -1,0 +1,4 @@
+waymo_root: ${oc.env:WAYMO_ROOT,data/waymo_v2}
+split: training
+segment: "10023947602400723454_1120_000_1140_000"
+max_frames: null

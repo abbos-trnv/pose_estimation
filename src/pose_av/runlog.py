@@ -73,25 +73,35 @@ def log_wandb(
         print("wandb: skip (pip install wandb)")
         return None
 
-    run = wandb.init(
-        project=project,
-        entity=entity or None,
-        name=run_name or None,
-        config=config or {},
-        finish_previous=True,
-    )
-    run.log(flatten_metrics(metrics))
-    if run_dir is not None:
-        metrics_file = run_dir / "metrics.json"
-        if metrics_file.exists():
-            run.save(str(metrics_file), policy="now")
-        cfg_file = run_dir / "config.yaml"
-        if cfg_file.exists():
-            run.save(str(cfg_file), policy="now")
-    url = run.url
-    run.finish()
-    print("wandb:", url)
-    return url
+    kwargs = {
+        "project": project,
+        "entity": entity or None,
+        "name": run_name or None,
+        "config": config or {},
+    }
+    try:
+        try:
+            run = wandb.init(**kwargs, finish_previous=True)
+        except TypeError:
+            try:
+                run = wandb.init(**kwargs, reinit=True)
+            except TypeError:
+                run = wandb.init(**kwargs)
+        run.log(flatten_metrics(metrics))
+        if run_dir is not None:
+            metrics_file = run_dir / "metrics.json"
+            if metrics_file.exists():
+                run.save(str(metrics_file), policy="now")
+            cfg_file = run_dir / "config.yaml"
+            if cfg_file.exists():
+                run.save(str(cfg_file), policy="now")
+        url = run.url
+        run.finish()
+        print("wandb:", url)
+        return url
+    except Exception as exc:
+        print("wandb: failed", type(exc).__name__, exc)
+        return None
 
 
 def log_mlflow(

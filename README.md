@@ -9,7 +9,7 @@
 - **Пайплайн:** кадр → бокс (GT или детект) → 2D pose.
 - **Не в скоупе ГП1–ГП4:** LSS/BEVFusion, планер, WOSAC как KPI.
 
-Отчёты: [ГП1](reports/gp1.md) · [ГП2](reports/gp2.md) · [ГП3](reports/gp3.md)  
+Отчёты: [ГП1](reports/gp1.md) · [ГП2](reports/gp2.md) · [ГП3](reports/gp3.md) · [ГП4](reports/gp4.md)  
 История прогонов: [HISTORY.md](HISTORY.md)
 
 ## Быстрый старт
@@ -55,6 +55,19 @@ python scripts/eval_pose.py logging.mlflow.enabled=true logging.mlflow.tracking_
 ```
 
 Без ключа скрипт не падает — пишет `wandb: skip`.
+
+## Train (ГП4)
+
+Нужен тот же срез картинок. Сначала лейблы YOLO-pose на **весь сегмент**, потом fine-tune, потом eval с `best.pt`:
+
+```powershell
+python scripts/export_yolo_pose.py
+python scripts/train_pose.py train.epochs=20 train.amp=true train.workers=4
+python scripts/eval_pose.py model.weights=runs/train/gp4/weights/best.pt data=waymo_full
+```
+
+Сетка: `python scripts/train_pose.py -m model=yolov8n_pose,yolov8s_pose`.  
+Kaggle: `notebooks/gp4_train.ipynb`. Отчёт: [`reports/gp4.md`](reports/gp4.md).
 
 
 ## Структура

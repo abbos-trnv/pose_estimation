@@ -1,0 +1,43 @@
+# GP4 train. First export, then train.
+# python scripts/export_yolo_pose.py data.max_frames=null
+# python scripts/train_pose.py
+# python scripts/train_pose.py -m model=yolov8n_pose,yolov8s_pose train.imgsz=640,1280
+defaults:
+  - data: waymo_full
+  - model: yolov8s_pose
+  - _self_
+
+seed: 42
+export_dir: data/yolo_pose_waymo
+val_frac: 0.2
+
+train:
+  epochs: 20
+  imgsz: 640
+  batch: 8
+  workers: 4          # параллельная загрузка
+  amp: true           # mixed precision
+  device: auto        # Kaggle 2xT4: [0,1]
+  patience: 5
+  project: runs/train
+  name: gp4
+
+logging:
+  run_name: gp4-train
+  wandb:
+    enabled: true
+    project: pose-av
+    entity: null
+  mlflow:
+    enabled: false
+    tracking_uri: null
+    experiment: pose-av
+
+hydra:
+  run:
+    dir: runs/${now:%Y%m%d_%H%M%S}
+  sweep:
+    dir: runs/multirun/${now:%Y%m%d_%H%M%S}
+    subdir: ${hydra.job.num}
+  job:
+    chdir: false

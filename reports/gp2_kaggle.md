@@ -19,11 +19,13 @@
 
 После Run All скопируй JSON `summary` (mean_OKS, PCK@0.2, latency, unmatched_gt) — это цифры в отчёт ГП2.
 
-Либо тот же протокол скриптом (логи уйдут в W&B, не только в эфемерный диск Kaggle):
+Код на Kaggle **не грузим zip-ом и не Upload File**. Репо публичный:
 
-1. Add-ons → Secrets → `WANDB_API_KEY`
-2. `pip install ultralytics wandb hydra-core`
-3. Скопируй `src/` + `configs/` + `scripts/eval_pose.py` в ноутбук (или загрузи репо как dataset)
-4. `python scripts/eval_pose.py`
+```
+git clone --depth 1 -b missing-ml-2026 https://github.com/abbos-trnv/pose_estimation.git
+```
+
+Ноутбук `gp4_train.ipynb` это делает сам (Internet On). После `git push` на GitHub достаточно Run All — подтянется новая версия. Zip с картинками заливается **один раз**.
+
 
 Не меряй это на CPU дома: YOLO на 40 кадрах на Kaggle T4 — минуты, локально будет долго.

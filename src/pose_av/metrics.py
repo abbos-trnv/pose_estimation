@@ -98,3 +98,22 @@ def coco17_to_waymo14(coco_xy: np.ndarray, coco_vis: np.ndarray) -> tuple[np.nda
     waymo[..., 13, :] = np.where(ears_ok[..., None], ears_xy, coco_xy[..., 0, :])
     vis[..., 13] = np.where(ears_ok, np.minimum(coco_vis[..., 3], coco_vis[..., 4]), coco_vis[..., 0])
     return waymo, vis
+
+
+def waymo14_to_coco17(waymo_xy: np.ndarray, waymo_vis: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Inverse of coco17_to_waymo14 for YOLO-pose training labels.
+
+    Eyes stay unlabeled. Ears copy the forehead when it is visible.
+    """
+    *batch, _, _xy = waymo_xy.shape
+    coco_xy = np.zeros((*batch, 17, 2), dtype=waymo_xy.dtype)
+    coco_vis = np.zeros((*batch, 17), dtype=waymo_vis.dtype)
+    coco_xy[..., 0, :] = waymo_xy[..., 0, :]
+    coco_vis[..., 0] = waymo_vis[..., 0]
+    coco_xy[..., 5:17, :] = waymo_xy[..., 1:13, :]
+    coco_vis[..., 5:17] = waymo_vis[..., 1:13]
+    coco_xy[..., 3, :] = waymo_xy[..., 13, :]
+    coco_xy[..., 4, :] = waymo_xy[..., 13, :]
+    coco_vis[..., 3] = waymo_vis[..., 13]
+    coco_vis[..., 4] = waymo_vis[..., 13]
+    return coco_xy, coco_vis

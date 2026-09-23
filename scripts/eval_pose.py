@@ -85,12 +85,16 @@ def main(cfg: DictConfig) -> None:
     cfg_resolved = OmegaConf.to_container(cfg, resolve=True)
     hydra_out = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
     metrics_path = write_run(hydra_out, metrics, cfg_resolved)
-    remote = log_remote(metrics, cfg_resolved, dict(cfg_resolved.get("logging") or {}), hydra_out)
+    print(json.dumps(metrics, indent=2))
+    print("wrote", metrics_path)
+    try:
+        remote = log_remote(metrics, cfg_resolved, dict(cfg_resolved.get("logging") or {}), hydra_out)
+    except Exception as exc:
+        print("remote logging failed:", type(exc).__name__, exc)
+        remote = {}
     if any(remote.values()):
         metrics["remote"] = remote
         metrics_path.write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(json.dumps(metrics, indent=2))
-    print("wrote", metrics_path)
 
 
 if __name__ == "__main__":

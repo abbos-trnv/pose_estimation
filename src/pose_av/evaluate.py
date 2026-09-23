@@ -26,6 +26,7 @@ class ProtocolStats:
     name: str
     oks: list[float] = field(default_factory=list)
     pck: list[float] = field(default_factory=list)
+    areas: list[float] = field(default_factory=list)
     unmatched: int = 0
     latency_s: list[float] = field(default_factory=list)
 
@@ -36,6 +37,7 @@ class ProtocolStats:
             "unmatched_gt": self.unmatched,
             "mean_OKS": float(np.nanmean(self.oks)) if self.oks else None,
             "PCK@0.2": float(np.nanmean(self.pck)) if self.pck else None,
+            "by_box_size": slice_by_area(self.oks, self.pck, self.areas),
         }
         if self.latency_s:
             mean_dt = float(np.mean(self.latency_s))
@@ -44,6 +46,31 @@ class ProtocolStats:
         if extra:
             out.update(extra)
         return out
+
+
+def slice_by_area(oks: list[float], pck_vals: list[float], areas: list[float]) -> dict[str, Any]:
+    """Tertiles of GT box area: small / medium / large."""
+    if len(areas) < 3:
+        return {}
+    arr_a = np.asarray(areas, dtype=np.float64)
+    arr_o = np.asarray(oks, dtype=np.float64)
+    arr_p = np.asarray(pck_vals, dtype=np.float64)
+    lo, hi = np.quantile(arr_a, [1.0 / 3.0, 2.0 / 3.0])
+    bands = {
+        "small": arr_a <= lo,
+        "medium": (arr_a > lo) & (arr_a <= hi),
+        "large": arr_a > hi,
+    }
+    out: dict[str, Any] = {}
+    for name, mask in bands.items():
+        if not np.any(mask):
+            continue
+        out[name] = {
+            "n": int(mask.sum()),
+            "mean_OKS": float(np.nanmean(arr_o[mask])),
+            "PCK@0.2": float(np.nanmean(arr_p[mask])),
+        }
+    return out
 
 
 def decode_jpeg(blob: bytes) -> np.ndarray | None:
@@ -101,6 +128,7 @@ def run_protocols(
                     pr_xy, _ = p_kpts[best_i]
                     ff.oks.append(mean_oks(gt_xy[None], pr_xy[None], gt_vis[None], wh[None]))
                     ff.pck.append(pck(gt_xy[None], pr_xy[None], gt_vis[None], wh[None], threshold=0.2))
+                    ff.areas.append(float(b["w"] * b["h"]))
 
             if do_gt_crop:
                 crop_pred = backend.predict_crop(im, gt_xyxy)
@@ -110,6 +138,7 @@ def run_protocols(
                     pr_xy, _ = crop_pred
                     td.oks.append(mean_oks(gt_xy[None], pr_xy[None], gt_vis[None], wh[None]))
                     td.pck.append(pck(gt_xy[None], pr_xy[None], gt_vis[None], wh[None], threshold=0.2))
+                    td.areas.append(float(b["w"] * b["h"]))
 
         if progress_every and (fi + 1) % progress_every == 0:
             print(f"{fi + 1}/{len(slice_data.keys)}  ff_matched={len(ff.oks)} td_matched={len(td.oks)}")
