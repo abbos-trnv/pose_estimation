@@ -3,41 +3,77 @@
 **Отчёт по вехе 4 (ГП4): экспериментирование**
 
 Тургунов Аббос  
-НИУ ВШЭ, 23 сентября 2026 г.  
-Репозиторий: `pose_estimation/` ветка `missing-ml-2026`
+Курс: Дополнительные главы машинного обучения / *The Missing Semester of Your ML Education*  
+НИУ ВШЭ, 24 сентября 2026 г.  
+Код: https://github.com/abbos-trnv/pose_estimation/tree/missing-ml-2026  
+W&B: https://wandb.ai/abbostrnv178-hse-university/pose-av
 
 ---
 
-## 1. Что требует веха
+## 1. Постановка
 
-- параллелизация обучения;
-- сетка экспериментов и **новый скор** относительно baseline ГП2 (PCK@0.2 / покрытие, не только mean OKS).
+Target: 2D keypoints пешехода на кадре камеры. GT — Waymo `camera_hkp`, **14 суставов** (нос, плечи, локти, запястья, бёдра, колени, лодыжки, лоб). YOLO учится в COCO-17; маппинг в `src/pose_av/metrics.py`.
 
-Baseline ГП2 — COCO YOLOv8s-pose **без** обучения, 40 кадров. ГП4: fine-tune на **всех кадрах сегмента**, val — хвост по времени.
+Модель: **YOLOv8s-pose**, fine-tune поверх COCO. Учим детект+позу на целом кадре. Кроп по GT-боксу — протокол оценки позы при известном человеке.
 
----
-
-## 2. Пайплайн
-
-1. `scripts/export_yolo_pose.py` — Waymo-14 → COCO-17 YOLO labels (`data/yolo_pose_waymo/`). Глаза не размечаем; уши = лоб, если он есть.  
-2. `scripts/train_pose.py` — Ultralytics fine-tune поверх COCO.  
-3. `scripts/eval_pose.py model.weights=.../best.pt` — те же протоколы + срез **small/medium/large** по площади GT-бокса.
-
-Ноутбук: `notebooks/gp4_train.ipynb`.
+KPI: **PCK@0.2** и доля unmatched GT; mean OKS — вспомогательно (на крупных боксах завышен). Срезы small/medium/large по площади бокса.
 
 ---
 
-## 3. Сетка
+## 2. Данные и сплиты
 
-| id | Что | Зачем |
-|---|---|---|
-| E0 | ГП2 `yolov8s-pose.pt`, 40 кадров | якорь |
-| E1 | s-pose, fine-tune, `imgsz=640`, AMP, workers=4 | student на домене |
-| E2 | n-pose, то же | скорость |
-| E3 | s-pose, `imgsz=1280` | мелкие люди |
-| E4 | eval `conf` 0.25 vs 0.35 vs 0.5 | recall vs FP |
+| Этап | Данные |
+|---|---|
+| GT таблица | train `camera_hkp`: 146 002 объекта, 439 nonempty-сегментов |
+| Картинки на экспериментах | **1 сегмент** `10023947602400723454_1120_000_1140_000` (~110 кадров с image+hkp) |
+| E0 eval | первые 40 кадров |
+| E2 eval | последние 20% того же клипа (22 кадра, `data.subset=val`) |
 
-Hydra:
+Вывод экспериментов: 88 картинок одной улицы недостаточно, чтобы обойти COCO по PCK. Скачаны ещё **6 nonempty-сегментов** image+box (`configs/data/gp4_segments.yaml`, ~2–5k объектов/клип). Val дальше — отдельный сегмент, не хвост того же видео. Дообучить на них до дедлайна не успели.
+
+---
+
+## 3. Параллелизация
+
+- AMP (`train.amp=true`)
+- DataLoader `workers=2–4`
+- Kaggle T4, batch 4 @ 1280
+- Hydra `-m` для сетки n/s и `imgsz`
+- DDP `device=[0,1]` на 2×T4, в прогоне не включали (одна карта)
+
+---
+
+## 4. Запущенные эксперименты
+
+| id | Что | Веса | Eval | W&B |
+|---|---|---|---|---|
+| E0 | COCO, без FT | `yolov8s-pose.pt` | 40 кадров, imgsz 1280 | [0yfnuwgz](https://wandb.ai/abbostrnv178-hse-university/pose-av/runs/0yfnuwgz) |
+| E1 | FT 20 эпох, imgsz **640** | `runs/train/gp4/best.pt` | 110 кадров (train+val) | [two11lwu](https://wandb.ai/abbostrnv178-hse-university/pose-av/runs/two11lwu) |
+| E2 | FT 100 эпох, imgsz **1280**, AdamW, copy-paste | `gp4_s1280/best.pt` | **val 22 кадра** | [i8j4ziwk](https://wandb.ai/abbostrnv178-hse-university/pose-av/runs/i8j4ziwk) |
+
+E1 не сравниваем с E0 1:1 (другой набор кадров). E2 — честнее по сплиту, но val всё ещё тот же ролик.
+
+### E0 (якорь ГП2)
+
+| | matched | unmatched | OKS | PCK@0.2 |
+|---|---|---|---|---|
+| full_frame | 53 | 100 | 0.956 | 0.464 |
+| gt_crop | 150 | 3 | 0.905 | **0.435** |
+
+### E2 (боевой FT, val)
+
+| | matched | unmatched | OKS | PCK@0.2 |
+|---|---|---|---|---|
+| full_frame | 77 | 10 | 0.894 | 0.369 |
+| gt_crop | 68 | 19 | 0.862 | **0.350** |
+
+Crop PCK small / medium / large: **0.22 / 0.39 / 0.44**.
+
+**Итог по скору.** Fine-tune на одном сегменте **не выбил** crop PCK относительно COCO. Unmatched на val-хвосте меньше, но это утечка сцены, не обобщение. Узкое место — объём картинок, не число эпох.
+
+---
+
+## 5. Команды
 
 ```text
 python scripts/export_yolo_pose.py
@@ -45,39 +81,4 @@ python scripts/train_pose.py
 python scripts/eval_pose.py data=waymo_full data.subset=val model.weights=runs/train/gp4_s1280/weights/best.pt
 ```
 
-На Kaggle 2×T4: `train.device=[0,1]` (DDP в Ultralytics).
-
----
-
-## 4. Параллелизация (как в лекции / ГП4 других групп)
-
-На нашей модели (YOLO-pose, мало параметров) осмысленно:
-
-- **AMP** `train.amp=true` — дефолт;
-- **DataLoader workers** `train.workers=4`;
-- **DDP** `device=[0,1]` если Kaggle T4×2;
-- **Hydra multirun** `-m` — сетка без правки кода.
-
-Gradient checkpointing не нужен (модель влезает в 16 GB).
-
----
-
-## 5. Скор
-
-Рабочий прогон — **100 эпох, imgsz=1280**, eval **только val**. Короткий 20 эпох @ 640 в отчёт не идёт.
-
-Якорь ГП2 (COCO, 40 кадров): crop PCK@0.2 = 0.435, full-frame unmatched = 100.
-
-Цель: crop PCK заметно выше 0.45 на val; small-бокс PCK не 0.28; full-frame unmatched ниже доли COCO на том же val.
-
----
-
-## 6. Команды (Kaggle, несколько часов)
-
-```text
-python scripts/export_yolo_pose.py
-python scripts/train_pose.py
-python scripts/eval_pose.py data=waymo_full data.subset=val model.weights=runs/train/gp4_s1280/weights/best.pt
-```
-
-OOM: `train.batch=2`. Не выключать ноутбук, пока идёт train.
+Ноутбук: `notebooks/gp4_train.ipynb` (git clone ветки `missing-ml-2026`).

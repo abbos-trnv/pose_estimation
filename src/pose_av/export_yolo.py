@@ -50,47 +50,46 @@ def _yolo_line(box: dict, coco_xy: np.ndarray, coco_vis: np.ndarray, w_img: int,
     return " ".join(parts)
 
 
-def export_yolo_pose(
+def export_frames(
     slice_data: SliceTables,
     out_dir: Path,
-    *,
-    val_frac: float = 0.2,
-) -> dict:
-    out_dir = Path(out_dir)
-    train_keys, val_keys = _split_keys(slice_data.keys, val_frac)
-    stats = {"train_images": 0, "val_images": 0, "train_instances": 0, "val_instances": 0}
-
-    for split, keys in (("train", train_keys), ("val", val_keys)):
-        img_dir = out_dir / "images" / split
-        lab_dir = out_dir / "labels" / split
-        img_dir.mkdir(parents=True, exist_ok=True)
-        lab_dir.mkdir(parents=True, exist_ok=True)
-        for key in keys:
-            im = decode_jpeg(slice_data.images[key])
-            if im is None:
+    split: str,
+    stats: dict,
+    prefix: str = "",
+) -> None:
+    img_dir = out_dir / "images" / split
+    lab_dir = out_dir / "labels" / split
+    img_dir.mkdir(parents=True, exist_ok=True)
+    lab_dir.mkdir(parents=True, exist_ok=True)
+    tag = prefix + "_" if prefix else ""
+    for key in slice_data.keys:
+        im = decode_jpeg(slice_data.images[key])
+        if im is None:
+            continue
+        h, w = im.shape[:2]
+        box_by_oid = {b["oid"]: b for b in slice_data.boxes.get(key, [])}
+        lines: list[str] = []
+        for rec in slice_data.hkps.get(key, []):
+            b = box_by_oid.get(rec["oid"])
+            if b is None:
                 continue
-            h, w = im.shape[:2]
-            box_by_oid = {b["oid"]: b for b in slice_data.boxes.get(key, [])}
-            lines: list[str] = []
-            for rec in slice_data.hkps.get(key, []):
-                b = box_by_oid.get(rec["oid"])
-                if b is None:
-                    continue
-                gt_xy, gt_vis = gt_keypoints(rec)
-                if gt_vis.sum() == 0:
-                    continue
-                coco_xy, coco_vis = waymo14_to_coco17(gt_xy, gt_vis)
-                line = _yolo_line(b, coco_xy, coco_vis, w, h)
-                if line:
-                    lines.append(line)
-            if not lines:
+            gt_xy, gt_vis = gt_keypoints(rec)
+            if gt_vis.sum() == 0:
                 continue
-            stem = f"{key[0]}_{key[1]}"
-            cv2.imwrite(str(img_dir / f"{stem}.jpg"), im)
-            (lab_dir / f"{stem}.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
-            stats[f"{split}_images"] += 1
-            stats[f"{split}_instances"] += len(lines)
+            coco_xy, coco_vis = waymo14_to_coco17(gt_xy, gt_vis)
+            line = _yolo_line(b, coco_xy, coco_vis, w, h)
+            if line:
+                lines.append(line)
+        if not lines:
+            continue
+        stem = f"{tag}{key[0]}_{key[1]}"
+        cv2.imwrite(str(img_dir / f"{stem}.jpg"), im)
+        (lab_dir / f"{stem}.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        stats[f"{split}_images"] += 1
+        stats[f"{split}_instances"] += len(lines)
 
+
+def write_data_yaml(out_dir: Path) -> Path:
     yaml_path = out_dir / "data.yaml"
     payload = {
         "path": str(out_dir.resolve()),
@@ -101,5 +100,34 @@ def export_yolo_pose(
         "names": {0: "person"},
     }
     yaml_path.write_text(yaml.dump(payload, sort_keys=False), encoding="utf-8")
-    stats["yaml"] = str(yaml_path)
+    return yaml_path
+
+
+def export_yolo_pose(
+    slice_data: SliceTables,
+    out_dir: Path,
+    *,
+    val_frac: float = 0.2,
+    prefix: str = "",
+) -> dict:
+    out_dir = Path(out_dir)
+    train_keys, val_keys = _split_keys(slice_data.keys, val_frac)
+    stats = {"train_images": 0, "val_images": 0, "train_instances": 0, "val_instances": 0}
+    train = SliceTables(
+        images=slice_data.images,
+        boxes=slice_data.boxes,
+        hkps=slice_data.hkps,
+        keys=train_keys,
+        paths=slice_data.paths,
+    )
+    val = SliceTables(
+        images=slice_data.images,
+        boxes=slice_data.boxes,
+        hkps=slice_data.hkps,
+        keys=val_keys,
+        paths=slice_data.paths,
+    )
+    export_frames(train, out_dir, "train", stats, prefix=prefix)
+    export_frames(val, out_dir, "val", stats, prefix=prefix)
+    stats["yaml"] = str(write_data_yaml(out_dir))
     return stats

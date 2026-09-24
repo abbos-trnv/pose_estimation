@@ -25,7 +25,8 @@
 - Модули `src/pose_av/{data_waymo,evaluate,yolo_backend,runlog,seed,boxes}.py`
 - Тесты без датасета: `pytest -q`
 
-## 2026-09-23 — GP4 train recipe
+## 2026-09-24 — GP4 experiments (deadline)
 
-- Не смоук 20 эпох @ 640: в отчёт не идёт.
-- Боевой прогон: 100 эпох, imgsz 1280, AdamW, copy-paste, eval `data.subset=val`, веса `gp4_s1280`.
+- E0 COCO 40 frames: crop PCK 0.435 — якорь
+- E2 FT 100ep@1280, val 22 frames: crop PCK 0.35; small 0.22. Не лучше COCO.
+- Скачаны 6 extra сегментов image+box; scene-split в `gp4_segments.yaml`. Обучение на них — после дедлайна.
