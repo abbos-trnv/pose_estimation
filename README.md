@@ -4,7 +4,7 @@
 Курс *The Missing Semester of Your ML Education*, НИУ ВШЭ, 2026.  
 Автор: Тургунов Аббос.
 
-Отчёты: [ГП1](reports/gp1.md) · [ГП2](reports/gp2.md) · [ГП3](reports/gp3.md) · [ГП4](reports/gp4.md)
+Отчёты: [ГП1](reports/gp1.md) · [ГП2](reports/gp2.md) · [ГП3](reports/gp3.md)
 
 ## Окружение
 
