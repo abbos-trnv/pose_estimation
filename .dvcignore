@@ -1,0 +1,7 @@
+# Do not let DVC crawl caches and dumps
+.venv
+.dvc/cache
+wandb
+runs
+weights
+**/__pycache__

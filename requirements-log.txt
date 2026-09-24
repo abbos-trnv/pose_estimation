@@ -1,3 +1,5 @@
-# Optional cloud loggers (not required for pytest)
+# Optional: cloud logs (GP3) and data pointers
 wandb>=0.16
 mlflow>=2.12
+dvc>=3.50
+ruff>=0.6

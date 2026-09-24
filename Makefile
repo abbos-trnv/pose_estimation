@@ -1,8 +1,11 @@
-.PHONY: install test lint eval
+.PHONY: install test lint eval docker-test docker-lint
 
 install:
 	python -m pip install -e .
 	python -m pip install -r requirements.txt
+
+install-log:
+	python -m pip install -r requirements-log.txt
 
 test:
 	python -m pytest -q
@@ -18,3 +21,9 @@ export:
 
 train:
 	python scripts/train_pose.py
+
+docker-test:
+	docker compose run --rm tests
+
+docker-lint:
+	docker compose run --rm lint

@@ -1,0 +1,8 @@
+services:
+  tests:
+    build: .
+    command: python -m pytest -q
+
+  lint:
+    build: .
+    command: python -m ruff check src tests scripts

@@ -1,0 +1,10 @@
+# Reproduce the GP2 image slice (hash in git, bytes outside git).
+#   dvc pull
+#   dvc add data/kaggle_gp2_slice.zip
+
+stages:
+  test:
+    cmd: python -m pytest -q
+    deps:
+      - src
+      - tests

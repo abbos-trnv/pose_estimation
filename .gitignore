@@ -5,11 +5,21 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 wandb/
-/data/
+.dvc/cache
+.dvc/tmp
+.dvc/config.local
+dvcstore/
 weights/
 outputs/
 runs/*
 !runs/.gitkeep
+reports/sample_train_labeled/
+
+# Raw Waymo / YOLO dumps stay local; keep DVC pointers and the data README.
+/data/**
+!/data/README.md
+!/data/*.dvc
+!/data/.gitignore
 
 .hydra/
 yolov8*.pt

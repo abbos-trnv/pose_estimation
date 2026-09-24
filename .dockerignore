@@ -1,0 +1,16 @@
+.venv
+.git
+.dvc/cache
+.dvc/tmp
+data
+runs
+weights
+wandb
+reports
+notebooks
+**/__pycache__
+*.pt
+*.parquet
+*.zip
+.pytest_cache
+.ruff_cache
