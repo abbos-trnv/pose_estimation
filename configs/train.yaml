@@ -12,15 +12,15 @@ export_dir: data/yolo_pose_waymo
 val_frac: 0.2
 
 train:
-  epochs: 100
-  imgsz: 1280
-  batch: 4              # T4 16GB; if OOM: train.batch=2
+  epochs: 40            # ~1–2 h on Kaggle T4 with 6 segments @ 640
+  imgsz: 640
+  batch: 8
   workers: 2
   amp: true
   device: auto
-  patience: 30
+  patience: 12
   project: runs/train
-  name: gp4_s1280
+  name: gp4_multi
   cos_lr: true
   close_mosaic: 20
   optimizer: AdamW
@@ -38,7 +38,7 @@ train:
   plots: true
 
 logging:
-  run_name: gp4-s1280
+  run_name: gp4-multi
   wandb:
     enabled: true
     project: pose-av

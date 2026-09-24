@@ -42,14 +42,11 @@ def find_parquet(root: Path, kind: str, segment: str) -> Path:
 
 
 def resolve_waymo_root(configured: str | Path) -> Path:
-    """Accept a local tree or a Kaggle dataset folder that contains camera_image."""
-    root = Path(configured)
+    """Local tree, or all Kaggle datasets under /kaggle/input (several zips)."""
     kaggle = Path("/kaggle/input")
     if kaggle.exists():
-        cands = list(kaggle.glob("**/camera_image"))
-        if cands:
-            return cands[0].parents[1]
-    return root
+        return kaggle
+    return Path(configured)
 
 
 def load_slice(
